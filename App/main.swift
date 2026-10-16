@@ -5,28 +5,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
 
     func applicationDidFinishLaunching(_ note: Notification) {
-        let center = CFNotificationCenterGetDarwinNotifyCenter()
-        CFNotificationCenterAddObserver(center, nil, { _, _, _, _, _ in
-            DispatchQueue.main.async { Handler.consume() }
-        }, Shared.requestNotification as CFString, nil, .deliverImmediately)
+        DistributedNotificationCenter.default().addObserver(forName: Shared.configRequestNotification, object: nil, queue: .main) { _ in
+            Config.broadcast()
+        }
+        Config.broadcast()
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         statusItem.button?.image = NSImage(systemSymbolName: "cursorarrow.click.2", accessibilityDescription: "轻右键")
         rebuildMenu()
 
-        Handler.consume()
         if !FIFinderSyncController.isExtensionEnabled { FIFinderSyncController.showExtensionManagementInterface() }
     }
 
     func application(_ app: NSApplication, open urls: [URL]) {
-        Handler.consume()
+        urls.compactMap(Shared.request(from:)).forEach(Handler.perform)
     }
 
     private func rebuildMenu() {
         let m = NSMenu()
         let dirs = NSMenuItem(title: "常用目录", action: nil, keyEquivalent: "")
         let sub = NSMenu()
-        for d in Shared.commonDirs() {
+        for d in Config.dirs {
             let it = NSMenuItem(title: "移除 \((d as NSString).lastPathComponent)", action: #selector(removeDir(_:)), keyEquivalent: "")
             it.representedObject = d
             it.toolTip = d
@@ -49,15 +48,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.allowsMultipleSelection = true
         NSApp.activate(ignoringOtherApps: true)
         guard panel.runModal() == .OK else { return }
-        var dirs = Shared.commonDirs()
+        var dirs = Config.dirs
         for u in panel.urls where !dirs.contains(u.path) { dirs.append(u.path) }
-        Shared.setCommonDirs(dirs)
+        Config.set(dirs)
         rebuildMenu()
     }
 
     @objc private func removeDir(_ sender: NSMenuItem) {
         guard let d = sender.representedObject as? String else { return }
-        Shared.setCommonDirs(Shared.commonDirs().filter { $0 != d })
+        Config.set(Config.dirs.filter { $0 != d })
         rebuildMenu()
     }
 
@@ -66,18 +65,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 
-enum Handler {
-    static func consume() {
-        let fm = FileManager.default
-        let files = (try? fm.contentsOfDirectory(at: Shared.requestsDir, includingPropertiesForKeys: nil)) ?? []
-        // 文件名以时间戳开头，排序即按点击顺序执行
-        for url in files.filter({ $0.pathExtension == "json" }).sorted(by: { $0.lastPathComponent < $1.lastPathComponent }) {
-            let data = try? Data(contentsOf: url)
-            try? fm.removeItem(at: url)
-            if let data, let req = try? JSONDecoder().decode(Request.self, from: data) { perform(req) }
-        }
+enum Config {
+    static var dirs: [String] {
+        UserDefaults.standard.stringArray(forKey: Shared.commonDirsKey) ?? Shared.defaultDirs()
     }
 
+    static func set(_ dirs: [String]) {
+        UserDefaults.standard.set(dirs, forKey: Shared.commonDirsKey)
+        broadcast()
+    }
+
+    static func broadcast() {
+        DistributedNotificationCenter.default().postNotificationName(
+            Shared.configNotification, object: nil, userInfo: [Shared.commonDirsKey: dirs], deliverImmediately: true)
+    }
+}
+
+enum Handler {
     static func perform(_ req: Request) {
         let fm = FileManager.default
         let target = URL(fileURLWithPath: req.target)

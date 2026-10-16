@@ -1,29 +1,33 @@
 import Foundation
 
+// 不用 App Group：ad-hoc 签名没有 Team ID，macOS 15 会把共享容器当受保护数据弹授权框。
+// 扩展 → 主 App：qingright://run?d=<base64 JSON>，主 App 没开时 LaunchServices 会顺带拉起。
+// 主 App → 扩展：分布式通知广播配置，扩展只存在内存里。
 enum Shared {
-    static let groupID = "NNJ8PRGN55.com.reruol.qingright"
-    // Darwin 通知不带数据，载荷放在 group 容器 requests/ 下，一次点击一个文件，连点不会互相覆盖
-    static let requestNotification = "com.reruol.qingright.request"
-    static let configVersionKey = "configVersion"
+    static let scheme = "qingright"
+    static let configNotification = Notification.Name("com.reruol.qingright.config")
+    static let configRequestNotification = Notification.Name("com.reruol.qingright.config.request")
     static let commonDirsKey = "commonDirs"
 
-    static let defaults = UserDefaults(suiteName: groupID)!
-
-    static var containerURL: URL {
-        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupID)!
-    }
-
-    static var requestsDir: URL { containerURL.appendingPathComponent("requests", isDirectory: true) }
-
-    static func commonDirs() -> [String] {
-        if let dirs = defaults.stringArray(forKey: commonDirsKey) { return dirs }
+    static func defaultDirs() -> [String] {
         let home = NSHomeDirectoryForUser(NSUserName()) ?? NSHomeDirectory()
         return ["Desktop", "Downloads", "Documents"].map { "\(home)/\($0)" }
     }
 
-    static func setCommonDirs(_ dirs: [String]) {
-        defaults.set(dirs, forKey: commonDirsKey)
-        defaults.set(defaults.integer(forKey: configVersionKey) + 1, forKey: configVersionKey)
+    static func url(for req: Request) -> URL? {
+        guard let data = try? JSONEncoder().encode(req) else { return nil }
+        var c = URLComponents()
+        c.scheme = scheme
+        c.host = "run"
+        c.queryItems = [URLQueryItem(name: "d", value: data.base64EncodedString())]
+        return c.url
+    }
+
+    static func request(from url: URL) -> Request? {
+        guard url.scheme == scheme,
+              let d = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first(where: { $0.name == "d" })?.value,
+              let data = Data(base64Encoded: d) else { return nil }
+        return try? JSONDecoder().decode(Request.self, from: data)
     }
 }
 

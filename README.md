@@ -4,32 +4,42 @@
 
 给 macOS 小白用的访达右键增强工具。极致轻量：安装包约 300 KB（Intel + Apple 芯片双架构），零第三方依赖。
 
-## 功能（v0.1.1）
+## 功能（v0.2.0）
 - 新建文件：txt / md / docx / xlsx（docx、xlsx 为合法空白文档）
 - 复制路径（多选时一行一个）
 - 在终端中打开
 - 常用目录：一键打开，菜单栏图标里增删
 - 复制到 / 移动到 常用目录（重名自动编号，不覆盖）
 
-## 下载
-- 所有版本：<https://github.com/ReRuol/QingRight/releases>
-- v0.1.1 直链：<https://github.com/ReRuol/QingRight/releases/download/v0.1.1/QingRight-0.1.1.zip>（SHA-256 `30732dc730bc502aacb48f082a3326e44d4ebe226d680a5246e03424ea6b8fc1`）
+## 安装
 
-⚠️ 当前为**预览版，未经苹果公证**。首次打开需要：
-1. 解压后把 `QingRight.app` 拖进「应用程序」
-2. 终端执行 `xattr -dr com.apple.quarantine /Applications/QingRight.app`
-3. 打开轻右键，在「系统设置 → 通用 → 登录项与扩展 → 访达」勾选「轻右键」
-4. 若弹出「想访问其他 App 的数据」，点「允许」
+**方式一：一行命令（推荐，零弹窗）**
+
+打开「终端」，粘贴回车：
+```sh
+curl -fsSL https://raw.githubusercontent.com/ReRuol/QingRight/master/scripts/install.sh | bash
+```
+自动下载最新版、装进「应用程序」、启用访达扩展。
+
+**方式二：DMG 拖拽安装**
+
+1. 下载 [QingRight-0.2.0.dmg](https://github.com/ReRuol/QingRight/releases/download/v0.2.0/QingRight-0.2.0.dmg)（约 140 KB），双击打开，把「轻右键」拖到「应用程序」
+2. 首次打开会提示「无法验证开发者」（开源软件没有付费签名）：打开「系统设置 → 隐私与安全性」，拉到底点「仍要打开」。只需一次
+3. 在「系统设置 → 通用 → 登录项与扩展 → 访达」勾选「轻右键」
+
+所有版本：<https://github.com/ReRuol/QingRight/releases>
 
 ## 架构
 ```
-访达 ──menu(for:)──▶ 扩展（沙盒，只拼菜单，配置走内存缓存）
+访达 ──menu(for:)──▶ 扩展（沙盒，只拼菜单，常用目录只存内存）
                         │ 复制路径：扩展内直接完成
-                        │ 其他：写 App Group/requests/<时间戳>.json + Darwin 通知
+                        │ 其他：打开 qingright://run?d=<base64 JSON>
                         ▼
                    主 App（不沙盒，菜单栏常驻）执行文件操作
-                   主 App 未运行时由 qingright:// 拉起并补执行
+                   未运行时由 LaunchServices 拉起后执行
+主 App ──分布式通知（常用目录）──▶ 扩展
 ```
+不用 App Group，所以不需要 Apple 开发者 Team ID，ad-hoc 签名即可运行。
 
 ## 加一个新功能
 1. `Shared/Shared.swift`：`Action` 里加一个 case
@@ -41,10 +51,13 @@
 ## 构建
 需要 Xcode 16+、[XcodeGen](https://github.com/yonaskolb/XcodeGen)。
 ```sh
-xcodegen generate
-xcodebuild -scheme QingRight -configuration Release -derivedDataPath build CODE_SIGN_IDENTITY=- build
+scripts/release.sh   # 产出 zip + dmg，版本号取自 project.yml 的 MARKETING_VERSION
 ```
-Fork 后请把 `project.yml` 和 `Shared/Shared.swift` 里的 Team ID `NNJ8PRGN55` 换成你自己的。
+
+## 发版
+1. 改 `project.yml` 的 `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION`
+2. `scripts/release.sh`
+3. `git tag vX.Y.Z && git push --tags && gh release create vX.Y.Z dist/*`
 
 ## License
 MIT

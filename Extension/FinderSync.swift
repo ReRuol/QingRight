@@ -2,23 +2,20 @@ import Cocoa
 import FinderSync
 
 final class FinderSync: FIFinderSync {
-    // 配置缓存：只有主 App 改了配置（版本号变化）才重新读
-    private var cachedVersion = -1
-    private var cachedDirs: [String] = []
+    // 常用目录只存内存：主 App 启动/改配置时广播过来，右键时零 IO
+    private var cachedDirs = Shared.defaultDirs()
+    private let dnc = DistributedNotificationCenter.default()
 
     override init() {
         super.init()
         FIFinderSyncController.default().directoryURLs = [URL(fileURLWithPath: "/")]
+        dnc.addObserver(forName: Shared.configNotification, object: nil, queue: .main) { [weak self] note in
+            if let dirs = note.userInfo?[Shared.commonDirsKey] as? [String] { self?.cachedDirs = dirs }
+        }
+        dnc.postNotificationName(Shared.configRequestNotification, object: nil, userInfo: nil, deliverImmediately: true)
     }
 
-    private func dirs() -> [String] {
-        let v = Shared.defaults.integer(forKey: Shared.configVersionKey)
-        if v != cachedVersion {
-            cachedDirs = Shared.commonDirs()
-            cachedVersion = v
-        }
-        return cachedDirs
-    }
+    private func dirs() -> [String] { cachedDirs }
 
     override func menu(for menuKind: FIMenuKind) -> NSMenu {
         let menu = NSMenu(title: "")
@@ -114,19 +111,6 @@ final class FinderSync: FIFinderSync {
     }
 
     private func send(_ req: Request) {
-        let dir = Shared.requestsDir
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let file = dir.appendingPathComponent("\(Date().timeIntervalSince1970)-\(UUID().uuidString).json")
-        guard let data = try? JSONEncoder().encode(req),
-              (try? data.write(to: file, options: .atomic)) != nil else { return }
-        let running = !NSRunningApplication.runningApplications(withBundleIdentifier: "com.reruol.qingright").isEmpty
-        if running {
-            CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(),
-                                                 CFNotificationName(Shared.requestNotification as CFString),
-                                                 nil, nil, true)
-        } else {
-            // 主 App 没开时用 URL 拉起，启动后会处理 requests/ 里积压的请求
-            NSWorkspace.shared.open(URL(string: "qingright://run")!)
-        }
+        if let url = Shared.url(for: req) { NSWorkspace.shared.open(url) }
     }
 }

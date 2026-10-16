@@ -5,12 +5,11 @@ options:
     macOS: "13.0"
 settings:
   base:
-    DEVELOPMENT_TEAM: NNJ8PRGN55
     CODE_SIGN_STYLE: Manual
-    CODE_SIGN_IDENTITY: "Apple Development"
+    CODE_SIGN_IDENTITY: "-"
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "0.1.1"
-    CURRENT_PROJECT_VERSION: "2"
+    MARKETING_VERSION: "0.2.0"
+    CURRENT_PROJECT_VERSION: "3"
     ARCHS: arm64 x86_64
     ONLY_ACTIVE_ARCH: NO
     DEAD_CODE_STRIPPING: YES
@@ -35,7 +34,6 @@ targets:
     entitlements:
       path: App/QingRight.entitlements
       properties:
-        com.apple.security.application-groups: [NNJ8PRGN55.com.reruol.qingright]
         com.apple.security.automation.apple-events: true
     settings:
       base:
@@ -60,7 +58,6 @@ targets:
       path: Extension/QingRightFinder.entitlements
       properties:
         com.apple.security.app-sandbox: true
-        com.apple.security.application-groups: [NNJ8PRGN55.com.reruol.qingright]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.reruol.qingright.finder
