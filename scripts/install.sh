@@ -6,7 +6,7 @@ REPO=ReRuol/QingRight
 VER=${QINGRIGHT_VERSION:-$(curl -fsSL "https://api.github.com/repos/$REPO/releases" | grep -m1 '"tag_name"' | cut -d'"' -f4)}
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
-echo "下载轻右键 $VER ..."
+echo "下载轻右键 ${VER} ..."
 curl -fsSL "https://github.com/$REPO/releases/download/$VER/QingRight-${VER#v}.zip" -o "$TMP/q.zip"
 ditto -x -k "$TMP/q.zip" "$TMP"
 pkill -x QingRight 2>/dev/null || true
@@ -16,4 +16,4 @@ xattr -dr com.apple.quarantine /Applications/QingRight.app 2>/dev/null || true
 pluginkit -a /Applications/QingRight.app/Contents/PlugIns/QingRightFinder.appex
 pluginkit -e use -i com.reruol.qingright.finder
 open /Applications/QingRight.app
-echo "✅ 已安装 $VER，现在在访达里点右键试试。"
+echo "✅ 已安装 ${VER}，现在在访达里点右键试试。"
