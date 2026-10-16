@@ -68,11 +68,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 enum Handler {
     static func consume() {
-        let url = Shared.requestURL
-        guard let data = try? Data(contentsOf: url),
-              let req = try? JSONDecoder().decode(Request.self, from: data) else { return }
-        try? FileManager.default.removeItem(at: url)
-        perform(req)
+        let fm = FileManager.default
+        let files = (try? fm.contentsOfDirectory(at: Shared.requestsDir, includingPropertiesForKeys: nil)) ?? []
+        // 文件名以时间戳开头，排序即按点击顺序执行
+        for url in files.filter({ $0.pathExtension == "json" }).sorted(by: { $0.lastPathComponent < $1.lastPathComponent }) {
+            let data = try? Data(contentsOf: url)
+            try? fm.removeItem(at: url)
+            if let data, let req = try? JSONDecoder().decode(Request.self, from: data) { perform(req) }
+        }
     }
 
     static func perform(_ req: Request) {

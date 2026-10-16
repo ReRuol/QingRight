@@ -48,13 +48,22 @@ final class FinderSync: FIFinderSync {
         let it = NSMenuItem(title: title, action: sel, keyEquivalent: "")
         it.target = self
         it.representedObject = rep
-        if let icon { it.image = NSImage(systemSymbolName: icon, accessibilityDescription: nil) }
+        if let icon { it.image = symbol(icon) }
         return it
+    }
+
+    private var symbols: [String: NSImage] = [:]
+
+    private func symbol(_ name: String) -> NSImage? {
+        if let img = symbols[name] { return img }
+        let img = NSImage(systemSymbolName: name, accessibilityDescription: nil)
+        symbols[name] = img
+        return img
     }
 
     private func submenu(_ title: String, icon: String, _ items: [NSMenuItem]) -> NSMenuItem {
         let it = NSMenuItem(title: title, action: nil, keyEquivalent: "")
-        it.image = NSImage(systemSymbolName: icon, accessibilityDescription: nil)
+        it.image = symbol(icon)
         let sub = NSMenu(title: title)
         items.forEach(sub.addItem)
         it.submenu = sub
@@ -105,15 +114,18 @@ final class FinderSync: FIFinderSync {
     }
 
     private func send(_ req: Request) {
+        let dir = Shared.requestsDir
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let file = dir.appendingPathComponent("\(Date().timeIntervalSince1970)-\(UUID().uuidString).json")
         guard let data = try? JSONEncoder().encode(req),
-              (try? data.write(to: Shared.requestURL, options: .atomic)) != nil else { return }
+              (try? data.write(to: file, options: .atomic)) != nil else { return }
         let running = !NSRunningApplication.runningApplications(withBundleIdentifier: "com.reruol.qingright").isEmpty
         if running {
             CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(),
                                                  CFNotificationName(Shared.requestNotification as CFString),
                                                  nil, nil, true)
         } else {
-            // 主 App 没开时用 URL 拉起，启动后会读取 request.json
+            // 主 App 没开时用 URL 拉起，启动后会处理 requests/ 里积压的请求
             NSWorkspace.shared.open(URL(string: "qingright://run")!)
         }
     }

@@ -2,18 +2,18 @@ import Foundation
 
 enum Shared {
     static let groupID = "NNJ8PRGN55.com.reruol.qingright"
-    // Darwin 通知不带数据，载荷放在 group 容器里的 request.json
+    // Darwin 通知不带数据，载荷放在 group 容器 requests/ 下，一次点击一个文件，连点不会互相覆盖
     static let requestNotification = "com.reruol.qingright.request"
     static let configVersionKey = "configVersion"
     static let commonDirsKey = "commonDirs"
 
-    static var defaults: UserDefaults { UserDefaults(suiteName: groupID)! }
+    static let defaults = UserDefaults(suiteName: groupID)!
 
     static var containerURL: URL {
         FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupID)!
     }
 
-    static var requestURL: URL { containerURL.appendingPathComponent("request.json") }
+    static var requestsDir: URL { containerURL.appendingPathComponent("requests", isDirectory: true) }
 
     static func commonDirs() -> [String] {
         if let dirs = defaults.stringArray(forKey: commonDirsKey) { return dirs }
