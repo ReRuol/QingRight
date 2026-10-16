@@ -10,7 +10,8 @@
 - 复制到 / 移动到 常用目录（重名自动编号，不覆盖）
 
 ## 下载
-最新版：<https://github.com/ReRuol/QingRight/releases/latest>
+- 所有版本：<https://github.com/ReRuol/QingRight/releases>
+- v0.1.0 直链：<https://github.com/ReRuol/QingRight/releases/download/v0.1.0/QingRight-0.1.0.zip>（76 KB，SHA-256 `a7c4b98f6f6a13fcc6974ac711d68e03301a30da4c06cdec4499e5ce769c6ef2`）
 
 ⚠️ 当前为**预览版，未经苹果公证**。首次打开需要：
 1. 解压后把 `QingRight.app` 拖进「应用程序」
