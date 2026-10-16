@@ -1,8 +1,10 @@
+<img src="docs/icon.png" width="128" alt="轻右键图标">
+
 # 轻右键 QingRight
 
 给 macOS 小白用的访达右键增强工具。极致轻量：安装包约 300 KB（Intel + Apple 芯片双架构），零第三方依赖。
 
-## 功能（v0.1.0）
+## 功能（v0.1.1）
 - 新建文件：txt / md / docx / xlsx（docx、xlsx 为合法空白文档）
 - 复制路径（多选时一行一个）
 - 在终端中打开
@@ -11,7 +13,7 @@
 
 ## 下载
 - 所有版本：<https://github.com/ReRuol/QingRight/releases>
-- v0.1.0 直链：<https://github.com/ReRuol/QingRight/releases/download/v0.1.0/QingRight-0.1.0.zip>（76 KB，SHA-256 `a7c4b98f6f6a13fcc6974ac711d68e03301a30da4c06cdec4499e5ce769c6ef2`）
+- v0.1.1 直链：<https://github.com/ReRuol/QingRight/releases/download/v0.1.1/QingRight-0.1.1.zip>（SHA-256 `30732dc730bc502aacb48f082a3326e44d4ebe226d680a5246e03424ea6b8fc1`）
 
 ⚠️ 当前为**预览版，未经苹果公证**。首次打开需要：
 1. 解压后把 `QingRight.app` 拖进「应用程序」

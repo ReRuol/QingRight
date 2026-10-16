@@ -9,8 +9,8 @@ settings:
     CODE_SIGN_STYLE: Manual
     CODE_SIGN_IDENTITY: "Apple Development"
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "0.1.0"
-    CURRENT_PROJECT_VERSION: "1"
+    MARKETING_VERSION: "0.1.1"
+    CURRENT_PROJECT_VERSION: "2"
     ARCHS: arm64 x86_64
     ONLY_ACTIVE_ARCH: NO
     DEAD_CODE_STRIPPING: YES
@@ -25,6 +25,9 @@ targets:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: 轻右键
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleIconFile: AppIcon
         LSUIElement: true
         CFBundleURLTypes:
           - CFBundleURLSchemes: [qingright]
@@ -47,6 +50,8 @@ targets:
       path: Extension/Info.plist
       properties:
         CFBundleDisplayName: 轻右键
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:
           NSExtensionPointIdentifier: com.apple.FinderSync
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).FinderSync
