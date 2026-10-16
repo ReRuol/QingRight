@@ -1,0 +1,61 @@
+name: QingRight
+options:
+  bundleIdPrefix: com.reruol
+  deploymentTarget:
+    macOS: "13.0"
+settings:
+  base:
+    DEVELOPMENT_TEAM: NNJ8PRGN55
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: "Apple Development"
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    ARCHS: arm64 x86_64
+    ONLY_ACTIVE_ARCH: NO
+    DEAD_CODE_STRIPPING: YES
+    SWIFT_OPTIMIZATION_LEVEL: "-Osize"
+    ENABLE_HARDENED_RUNTIME: YES
+targets:
+  QingRight:
+    type: application
+    platform: macOS
+    sources: [{path: App, excludes: ["._*"]}, {path: Shared, excludes: ["._*"]}, {path: Templates, buildPhase: resources, excludes: ["._*"]}]
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: 轻右键
+        LSUIElement: true
+        CFBundleURLTypes:
+          - CFBundleURLSchemes: [qingright]
+        NSAppleEventsUsageDescription: 用于在终端中打开文件夹
+    entitlements:
+      path: App/QingRight.entitlements
+      properties:
+        com.apple.security.application-groups: [NNJ8PRGN55.com.reruol.qingright]
+        com.apple.security.automation.apple-events: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.reruol.qingright
+    dependencies:
+      - target: QingRightFinder
+  QingRightFinder:
+    type: app-extension
+    platform: macOS
+    sources: [{path: Extension, excludes: ["._*"]}, {path: Shared, excludes: ["._*"]}]
+    info:
+      path: Extension/Info.plist
+      properties:
+        CFBundleDisplayName: 轻右键
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.FinderSync
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).FinderSync
+          NSExtensionAttributes: {}
+    entitlements:
+      path: Extension/QingRightFinder.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.application-groups: [NNJ8PRGN55.com.reruol.qingright]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.reruol.qingright.finder
