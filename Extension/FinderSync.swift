@@ -22,29 +22,33 @@ final class FinderSync: FIFinderSync {
         let onItems = menuKind == .contextualMenuForItems
 
         menu.addItem(submenu("新建文件", icon: "doc.badge.plus",
-                             NewFileKind.allCases.map { item($0.title, #selector(newFile(_:)), rep: $0.rawValue) }))
+                             NewFileKind.allCases.enumerated().map { item($1.title, #selector(newFile(_:)), tag: $0) }))
         menu.addItem(item(onItems ? "复制路径" : "复制当前路径", #selector(copyPath(_:)), icon: "doc.on.clipboard"))
         menu.addItem(item("在终端中打开", #selector(openTerminal(_:)), icon: "terminal"))
 
         let ds = dirs()
+        menuDirs = ds
         let name = { (p: String) in (p as NSString).lastPathComponent }
         menu.addItem(submenu("常用目录", icon: "folder",
-                             ds.map { item(name($0), #selector(openDir(_:)), rep: $0) }))
+                             ds.enumerated().map { item(name($1), #selector(openDir(_:)), tag: $0) }))
         if onItems {
             menu.addItem(submenu("复制到", icon: "doc.on.doc",
-                                 ds.map { item(name($0), #selector(copyTo(_:)), rep: $0) }))
+                                 ds.enumerated().map { item(name($1), #selector(copyTo(_:)), tag: $0) }))
             menu.addItem(submenu("移动到", icon: "arrow.right.doc.on.clipboard",
-                                 ds.map { item(name($0), #selector(moveTo(_:)), rep: $0) }))
+                                 ds.enumerated().map { item(name($1), #selector(moveTo(_:)), tag: $0) }))
         }
         return menu
     }
 
     // MARK: - 菜单构造
 
-    private func item(_ title: String, _ sel: Selector, icon: String? = nil, rep: String? = nil) -> NSMenuItem {
+    // 访达会复制菜单项再显示，representedObject 会丢，只有 tag 能带回来，所以用 tag 存下标
+    private var menuDirs: [String] = []
+
+    private func item(_ title: String, _ sel: Selector, icon: String? = nil, tag: Int = 0) -> NSMenuItem {
         let it = NSMenuItem(title: title, action: sel, keyEquivalent: "")
         it.target = self
-        it.representedObject = rep
+        it.tag = tag
         if let icon { it.image = symbol(icon) }
         return it
     }
@@ -91,26 +95,35 @@ final class FinderSync: FIFinderSync {
     }
 
     @objc func newFile(_ sender: NSMenuItem) {
-        send(Request(action: .newFile, target: currentDir, arg: sender.representedObject as? String ?? "txt"))
+        send(Request(action: .newFile, target: currentDir, arg: NewFileKind.allCases[safe: sender.tag]?.rawValue ?? "txt"))
     }
 
     @objc func openTerminal(_ sender: NSMenuItem) {
         send(Request(action: .openTerminal, target: currentDir))
     }
 
+    private func dir(_ sender: NSMenuItem) -> String? { menuDirs[safe: sender.tag] }
+
     @objc func openDir(_ sender: NSMenuItem) {
-        send(Request(action: .openDir, target: sender.representedObject as? String ?? ""))
+        guard let d = dir(sender) else { return }
+        send(Request(action: .openDir, target: d))
     }
 
     @objc func copyTo(_ sender: NSMenuItem) {
-        send(Request(action: .copyTo, target: sender.representedObject as? String ?? "", items: selected))
+        guard let d = dir(sender) else { return }
+        send(Request(action: .copyTo, target: d, items: selected))
     }
 
     @objc func moveTo(_ sender: NSMenuItem) {
-        send(Request(action: .moveTo, target: sender.representedObject as? String ?? "", items: selected))
+        guard let d = dir(sender) else { return }
+        send(Request(action: .moveTo, target: d, items: selected))
     }
 
     private func send(_ req: Request) {
         if let url = Shared.url(for: req) { NSWorkspace.shared.open(url) }
     }
+}
+
+extension Array {
+    subscript(safe i: Int) -> Element? { indices.contains(i) ? self[i] : nil }
 }
