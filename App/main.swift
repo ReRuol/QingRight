@@ -14,7 +14,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem.button?.image = NSImage(systemSymbolName: "cursorarrow.click.2", accessibilityDescription: "轻右键")
         rebuildMenu()
 
-        if !FIFinderSyncController.isExtensionEnabled { FIFinderSyncController.showExtensionManagementInterface() }
+        ExtensionRepair.run(interactive: false)
     }
 
     func application(_ app: NSApplication, open urls: [URL]) {
@@ -35,7 +35,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         sub.addItem(NSMenuItem(title: "添加目录…", action: #selector(addDir), keyEquivalent: ""))
         dirs.submenu = sub
         m.addItem(dirs)
-        m.addItem(NSMenuItem(title: "启用访达扩展…", action: #selector(openExtSettings), keyEquivalent: ""))
+        m.addItem(NSMenuItem(title: "修复右键菜单…", action: #selector(openExtSettings), keyEquivalent: ""))
         m.addItem(.separator())
         m.addItem(NSMenuItem(title: "退出轻右键", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         statusItem.menu = m
@@ -61,7 +61,71 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func openExtSettings() {
-        FIFinderSyncController.showExtensionManagementInterface()
+        ExtensionRepair.run(interactive: true)
+    }
+}
+
+// 没有付费签名时，DMG 下载的 App 带隔离标记，扩展可能不被系统登记，右键菜单就是空的。
+// 启动时自检：去掉自身隔离标记 → 重新登记并启用扩展 → 仍未启用再引导用户去系统设置。
+enum ExtensionRepair {
+    static let extID = "com.reruol.qingright.finder"
+
+    static func run(interactive: Bool) {
+        var app = Bundle.main.bundleURL
+        // 隔离标记下即使放在 /Applications，「仍要打开」后也会被随机化到只读临时目录运行，扩展登记不上
+        if app.path.contains("/AppTranslocation/") {
+            guard let original = originalURL(of: app), original.path.hasPrefix("/Applications/") else {
+                Handler.alert("请先把「轻右键」拖到「应用程序」文件夹，再从那里打开。")
+                return
+            }
+            sh("/usr/bin/xattr", ["-dr", "com.apple.quarantine", original.path])
+            relaunch(original)
+            return
+        }
+        if !app.path.hasPrefix("/Applications/") {
+            Handler.alert("请先把「轻右键」拖到「应用程序」文件夹，再从那里打开。\n当前位置：\(app.path)")
+            return
+        }
+        app.resolveSymlinksInPath()
+        if FIFinderSyncController.isExtensionEnabled && !interactive { return }
+        let appex = app.appendingPathComponent("Contents/PlugIns/QingRightFinder.appex").path
+        sh("/usr/bin/xattr", ["-dr", "com.apple.quarantine", app.path])
+        sh("/usr/bin/pluginkit", ["-a", appex])
+        sh("/usr/bin/pluginkit", ["-e", "use", "-i", extID])
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            if FIFinderSyncController.isExtensionEnabled {
+                if interactive { Handler.alert("右键菜单已启用。如果访达里还看不到，请重启访达（按住 Option 右键程序坞里的访达 → 重新开启）。") }
+            } else {
+                Handler.alert("请在接下来打开的设置里，把「轻右键」的开关打开。")
+                FIFinderSyncController.showExtensionManagementInterface()
+            }
+        }
+    }
+
+    // Security.framework 的 SecTranslocateCreateOriginalPathForURL 没有公开头文件，按符号动态取
+    private static func originalURL(of url: URL) -> URL? {
+        typealias Fn = @convention(c) (CFURL, UnsafeMutablePointer<Unmanaged<CFError>?>?) -> Unmanaged<CFURL>?
+        guard let h = dlopen("/System/Library/Frameworks/Security.framework/Security", RTLD_LAZY),
+              let sym = dlsym(h, "SecTranslocateCreateOriginalPathForURL") else { return nil }
+        return unsafeBitCast(sym, to: Fn.self)(url as CFURL, nil)?.takeRetainedValue() as URL?
+    }
+
+    private static func relaunch(_ app: URL) {
+        let cfg = NSWorkspace.OpenConfiguration()
+        cfg.createsNewApplicationInstance = true
+        NSWorkspace.shared.openApplication(at: app, configuration: cfg) { _, _ in
+            DispatchQueue.main.async { NSApp.terminate(nil) }
+        }
+    }
+
+    @discardableResult
+    private static func sh(_ cmd: String, _ args: [String]) -> Int32 {
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: cmd)
+        p.arguments = args
+        try? p.run()
+        p.waitUntilExit()
+        return p.terminationStatus
     }
 }
 
