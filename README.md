@@ -4,12 +4,13 @@
 
 给 macOS 小白用的访达右键增强工具。极致轻量：安装包约 300 KB（Intel + Apple 芯片双架构），零第三方依赖。
 
-## 功能（v0.2.1）
+## 功能（v0.3.0）
 - 新建文件：txt / md / docx / xlsx（docx、xlsx 为合法空白文档）
 - 复制路径（多选时一行一个）
 - 在终端中打开
 - 常用目录：一键打开，菜单栏图标里增删
 - 复制到 / 移动到 常用目录（重名自动编号，不覆盖）
+- 检查更新：菜单栏图标 →「检查更新…」，有新版一键更新（不会自动联网）
 
 ## 安装
 
@@ -23,7 +24,7 @@ curl -fsSL https://raw.githubusercontent.com/ReRuol/QingRight/master/scripts/ins
 
 **方式二：DMG 拖拽安装**
 
-1. 下载 [QingRight-0.2.1.dmg](https://github.com/ReRuol/QingRight/releases/download/v0.2.1/QingRight-0.2.1.dmg)（约 140 KB），双击打开，把「轻右键」拖到「应用程序」
+1. 下载 [QingRight-0.3.0.dmg](https://github.com/ReRuol/QingRight/releases/download/v0.3.0/QingRight-0.3.0.dmg)（约 140 KB），双击打开，把「轻右键」拖到「应用程序」
 2. 首次打开会提示「无法验证开发者」（开源软件没有付费签名）：打开「系统设置 → 隐私与安全性」，拉到底点「仍要打开」。只需一次
 3. 打开后会自动登记并启用右键扩展；若仍未出现，点菜单栏图标 →「修复右键菜单…」
 
@@ -61,8 +62,14 @@ scripts/release.sh   # 产出 zip + dmg，版本号取自 project.yml 的 MARKET
 
 ## 发版
 1. 改 `project.yml` 的 `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION`
-2. `scripts/release.sh`
-3. `git tag vX.Y.Z && git push --tags && gh release create vX.Y.Z dist/*`
+2. `scripts/release.sh`（会用钥匙串里的私钥给 zip 签名，生成 `.zip.sig`）
+3. `git tag vX.Y.Z && git push --tags && gh release create vX.Y.Z <dmg> <zip> <zip.sig>`
+
+### 更新签名
+App 内置 Ed25519 公钥（`App/Updater.swift`），只安装签名校验通过的更新包。
+私钥只在发布者钥匙串里（条目名 `QingRight Update Signing Key`），由 `swift scripts/sign_update.swift keygen` 生成。
+**私钥丢失 = 老版本无法自动更新**，请备份：`security find-generic-password -s "QingRight Update Signing Key" -w`，存进密码管理器。
+Fork 发布请生成自己的密钥并替换 `Updater.publicKey`。
 
 ## License
 MIT

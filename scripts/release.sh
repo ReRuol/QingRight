@@ -16,5 +16,7 @@ ditto -c -k --norsrc --keepParent "$APP" "$OUT/QingRight-$VER.zip"
 S=$(mktemp -d); ditto --norsrc "$APP" "$S/QingRight.app"; ln -s /Applications "$S/应用程序"
 hdiutil create -quiet -volname "轻右键 $VER" -srcfolder "$S" -fs HFS+ -format ULMO "$OUT/QingRight-$VER.dmg"
 rm -rf "$S"
+# 更新包签名：私钥在发布者钥匙串里，App 内置公钥验签
+swift scripts/sign_update.swift sign "$OUT/QingRight-$VER.zip" > "$OUT/QingRight-$VER.zip.sig"
 ls -l "$OUT/QingRight-$VER".*
 shasum -a 256 "$OUT/QingRight-$VER".*

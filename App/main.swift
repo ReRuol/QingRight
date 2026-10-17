@@ -36,6 +36,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         dirs.submenu = sub
         m.addItem(dirs)
         m.addItem(NSMenuItem(title: "修复右键菜单…", action: #selector(openExtSettings), keyEquivalent: ""))
+        m.addItem(NSMenuItem(title: "检查更新…（v\(Updater.current)）", action: #selector(checkUpdate), keyEquivalent: ""))
         m.addItem(.separator())
         m.addItem(NSMenuItem(title: "退出轻右键", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         statusItem.menu = m
@@ -58,6 +59,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard let d = sender.representedObject as? String else { return }
         Config.set(Config.dirs.filter { $0 != d })
         rebuildMenu()
+    }
+
+    @objc private func checkUpdate() {
+        Updater.check()
     }
 
     @objc private func openExtSettings() {
