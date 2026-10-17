@@ -42,15 +42,20 @@ struct Request: Codable {
     var arg: String = ""      // newFile 时为扩展名
 }
 
+// 顺序即菜单顺序；docx/xlsx/pptx/pdf/rtf 在 Templates/ 有 blank.<ext> 模板，其余建空文件
 enum NewFileKind: String, CaseIterable {
-    case txt, md, docx, xlsx
+    case docx, xlsx, pptx, pdf, txt, md, rtf, csv
 
     var title: String {
         switch self {
-        case .txt: return "文本文档 (.txt)"
-        case .md: return "Markdown (.md)"
         case .docx: return "Word 文档 (.docx)"
         case .xlsx: return "Excel 表格 (.xlsx)"
+        case .pptx: return "PPT 演示文稿 (.pptx)"
+        case .pdf: return "PDF 文档 (.pdf)"
+        case .txt: return "文本文档 (.txt)"
+        case .md: return "Markdown (.md)"
+        case .rtf: return "富文本 (.rtf)"
+        case .csv: return "CSV 表格 (.csv)"
         }
     }
 }

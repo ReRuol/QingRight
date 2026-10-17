@@ -4,8 +4,8 @@
 
 给 macOS 小白用的访达右键增强工具。极致轻量：安装包约 300 KB（Intel + Apple 芯片双架构），零第三方依赖。
 
-## 功能（v0.3.1）
-- 新建文件：txt / md / docx / xlsx（docx、xlsx 为合法空白文档）
+## 功能（v0.4.0）
+- 新建文件：Word / Excel / PPT / PDF / txt / Markdown / RTF / CSV（Office 和 PDF 为合法空白文档）
 - 复制路径（多选时一行一个）
 - 在终端中打开
 - 常用目录：一键打开，菜单栏图标里增删
@@ -24,7 +24,7 @@ curl -fsSL https://raw.githubusercontent.com/ReRuol/QingRight/master/scripts/ins
 
 **方式二：DMG 拖拽安装**
 
-1. 下载 [QingRight-0.3.1.dmg](https://github.com/ReRuol/QingRight/releases/download/v0.3.1/QingRight-0.3.0.dmg)（约 140 KB），双击打开，把「轻右键」拖到「应用程序」
+1. 下载 [QingRight-0.4.0.dmg](https://github.com/ReRuol/QingRight/releases/download/v0.4.0/QingRight-0.3.0.dmg)（约 140 KB），双击打开，把「轻右键」拖到「应用程序」
 2. 首次打开会提示「无法验证开发者」（开源软件没有付费签名）：打开「系统设置 → 隐私与安全性」，拉到底点「仍要打开」。只需一次
 3. 打开后会自动登记并启用右键扩展；若仍未出现，点菜单栏图标 →「修复右键菜单…」
 
@@ -52,7 +52,7 @@ xattr -dr com.apple.quarantine /Applications/QingRight.app && open /Applications
 2. `Extension/FinderSync.swift`：`menu(for:)` 里加菜单项，动作函数里 `send(Request(...))`
 3. `App/main.swift`：`Handler.perform` 里加对应分支
 
-新建文件类型：往 `Templates/` 放 `blank.<扩展名>`，再在 `NewFileKind` 加一项。
+新建文件类型：往 `Templates/` 放 `blank.<扩展名>`（或改 `scripts/make_templates.py` 生成），再在 `NewFileKind` 加一项。
 
 ## 构建
 需要 Xcode 16+、[XcodeGen](https://github.com/yonaskolb/XcodeGen)。
